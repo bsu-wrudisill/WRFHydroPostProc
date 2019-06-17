@@ -5,17 +5,32 @@ library(ggplot2)
 library(foreach)
 library(rwrfhydro)
 
+
 #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!#
 #~~~~~~~~~~~~~~~ Part 0 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~# 
 #  User Parameters 
+#  Usage: Rscript evalQcustom.R <dataPath> <startDate (YYYY-MM-DD)> <endDate (YYYY-MM-DD)> <USGS GageID>
 #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!#
 
-dataPath <- '/scratch/wrudisill/WRF_HYDRO-R2_WILLDEV/wy2010_SFPayette'    # location of model output files. this will only be read in if a CSV does not yet exist for the gauge point 
-startDate <- "2009-10-01"
-endDate <- "2010-09-30"
-gageID        <- c("13235000")
-modelOutputCSV <- "discharge.csv"        # this will either be read in (if it exists) or created. Perhaps create a better name for this file 
-#GaugeGridCell <- 1   # this is the index point of the river grid cell. 1 is the channel outlet.
+# arguments
+args = commandArgs(trailingOnly=TRUE)
+# test if there is at least one argument: if not, return an error
+if (length(args)==0) {
+	print("usage: Rscript evalQcustom.R <dataPath> <startDate> <endDate> <USGS GageID>")
+        print('No input arguments provided. using defaults')
+	dataPath <- '/scratch/wrudisill/WRF_HYDRO-R2_WILLDEV/wy2010_SFPayette/ModelOut/'    # location of model output files. this will only be read in if a CSV does not yet exist for the gauge point 
+	startDate <- "2009-10-01"
+	endDate <- "2010-09-30"
+	gageID        <- "13235000"
+	modelOutputCSV <- "discharge.csv"        # this will either be read in (if it exists) or created. Perhaps create a better name for this file 
+} else {
+	dataPath <- args[1]
+	startDate <- args[2]
+	endDate <- args[3]
+	gageID  <- args[4]
+	modelOutputCSV <- "discharge.csv"        # this will either be read in (if it exists) or created. Perhaps create a better name for this file 
+}
+
 
 
 #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!#
@@ -26,9 +41,7 @@ modelOutputCSV <- "discharge.csv"        # this will either be read in (if it ex
 obsDF <- readNWISuv(siteNumbers=gageID, parameterCd="00060", startDate=startDate, endDate=endDate)  #discharge
 stationInfo <- readNWISsite(siteNumbers=gageID)
 requestedLat <- stationInfo$dec_lat_va         #44.080834 latitude of gauge point
-requestedLon <- stationInfo$dec_lon_va         #-115.618558 longitude of gauge point 
-
-
+requestedLon <- stationInfo$dec_long_va         #-115.618558 longitude of gauge point 
 #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!#
 #~~~~~~~~~~~~~~~ Part 2 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~# 
 # Create a CSV file of discharge for the grid cell that corresponds 
@@ -53,21 +66,18 @@ if(file.exists(modelOutputCSV)){
 
 	# ~~ Find the correct index the corresponds w/ the gauge location lat/lon
 	# using a simple minimum distance formula
-	SampleFile <- GetNcdfFile(paste0(yr,mo,day,'0000.CHRTOUT_DOMAIN2'), quiet=TRUE)  #
+	SampleFile <- GetNcdfFile(paste0(dataPath,yr,mo,day,'0000.CHRTOUT_DOMAIN2'), quiet=TRUE)  #
 	distance <- sqrt((SampleFile$lat - requestedLat)^2 + (SampleFile$lon - requestedLon)^2)
 	GaugeGridCell <- which(distance==min(distance))
-	
 	# create lists to pass into the multinc function
 	chFiles <- list.files(path=dataPath, pattern='CHRTOUT_DOMAIN2', full.names=TRUE)
 	hydroVars <- list(Q='streamflow') # lat='latitude',lon='longitude')
 	hydroInds <- list(streamflow=GaugeGridCell)
-
 	# construct lists
 	fileList <- list(hydro=chFiles)
 	varList  <- list(hydro=hydroVars)
 	indList  <- list(hydro=hydroInds)
 	fileData <- GetMultiNcdf(file=fileList,var=varList, ind=indList, parallel=FALSE)
-
 	# write CSV file 
 	write.csv(fileData, file=modelOutputCSV)
 }
