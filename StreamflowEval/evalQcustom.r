@@ -28,10 +28,9 @@ if (length(args)==0) {
 	startDate <- args[2]
 	endDate <- args[3]
 	gageID  <- args[4]
-	modelOutputCSV <- "discharge.csv"        # this will either be read in (if it exists) or created. Perhaps create a better name for this file 
+	modelOutputCSV <- "WRFHydroDischarge.csv"        # this will either be read in (if it exists) or created. Perhaps create a better name for this file 
+	print(gageID)
 }
-
-
 
 #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!#
 #~~~~~~~~~~~~~~~ Part 1~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~# 
@@ -63,14 +62,17 @@ if(file.exists(modelOutputCSV)){
 	yr=dateSplit[1]
 	mo=dateSplit[2]
 	day=dateSplit[3]
-
+	print(yr)
+	print(mo)
+	print(day)
+	print(paste0(dataPath,yr,mo,day,'0000.CHRTOUT_DOMAIN1'))
 	# ~~ Find the correct index the corresponds w/ the gauge location lat/lon
 	# using a simple minimum distance formula
-	SampleFile <- GetNcdfFile(paste0(dataPath,yr,mo,day,'0000.CHRTOUT_DOMAIN2'), quiet=TRUE)  #
+	SampleFile <- GetNcdfFile(paste0(dataPath,yr,mo,day,'0000.CHRTOUT_DOMAIN1'), quiet=TRUE)  #
 	distance <- sqrt((SampleFile$lat - requestedLat)^2 + (SampleFile$lon - requestedLon)^2)
 	GaugeGridCell <- which(distance==min(distance))
 	# create lists to pass into the multinc function
-	chFiles <- list.files(path=dataPath, pattern='CHRTOUT_DOMAIN2', full.names=TRUE)
+	chFiles <- list.files(path=dataPath, pattern='CHRTOUT_DOMAIN1', full.names=TRUE)
 	hydroVars <- list(Q='streamflow') # lat='latitude',lon='longitude')
 	hydroInds <- list(streamflow=GaugeGridCell)
 	# construct lists
@@ -104,6 +106,8 @@ selected_cols<-c("dateTime", "site_no", "q_cms","run")
 
 # merge data 
 merged <- rbind(obsDF[,selected_cols], simQ[,selected_cols])
-
+write.csv(merged, file='merged_discharge.csv')
 # plot the data
 ggplot(data = merged) + geom_line(aes(dateTime, q_cms, color=run)) + facet_wrap(~site_no, ncol = 1)
+#ggplot(data = merged) + geom_line(aes(dateTime, q_cms, color=run)) + facet_wrap(~site_no, ncol = 1) + ylim(0,1.5)
+
