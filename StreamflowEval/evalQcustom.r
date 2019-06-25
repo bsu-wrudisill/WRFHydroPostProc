@@ -111,3 +111,33 @@ write.csv(merged, file='merged_discharge.csv')
 ggplot(data = merged) + geom_line(aes(dateTime, q_cms, color=run)) + facet_wrap(~site_no, ncol = 1)
 #ggplot(data = merged) + geom_line(aes(dateTime, q_cms, color=run)) + facet_wrap(~site_no, ncol = 1) + ylim(0,1.5)
 
+
+
+#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!#
+#~~~~~~~~~~~~~~~ Part 3 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~# 
+# Perform some statistics  
+#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!#
+
+#library(tibbletime)
+library(dplyr)
+library(lubridate)
+
+
+dailySimQ <- simQ %>%
+  mutate(day = as.Date(dateTime, format="%Y-%m-%d")) %>%
+  group_by(day) %>% # group by the day column
+    summarise(Qm=sum(q_cms)) %>%  # calculate the SUM of all precipitation that occurred on each day
+    na.omit()
+
+dailyObsQ <- obsDF %>%
+  mutate(day = as.Date(dateTime, format="%Y-%m-%d")) %>%
+  group_by(day) %>% # group by the day column
+    summarise(Qo=sum(q_cms)) %>%  # calculate the SUM of all precipitation that occurred on each day
+    na.omit()
+
+# merged daily --- there are some cases where the Obs are not reported for data quality issues
+mergedDailyAgg <- left_join(dailySimQ, dailyObsQ, by=c("day"))
+fit.lm = lm(Qm~Qo, data=mergedDailyAgg)
+summary(fit.lm)$r.squared 
+
+
