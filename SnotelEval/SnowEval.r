@@ -47,9 +47,9 @@ if (length(args)==0){
 # ~~~~~~~~~~~~~~ 1. Read local SNOTEL files ~~~~~~~~~~~~~~~~~~ # 
 # --------------------------------------------------------------
 
-df <- read.csv("439_26_WATERYEAR=2010.csv",skip=4,header=T,sep=",")
+df <- read.csv("439_26_WATERYEAR=2010.csv",skip=4,header=T,sep=",")  # CHANGE ME! This is hardcoded for now 
+								     # the rwrfhydro atuomatic download code is broken
 colnames(df) <- c('site','Time','NA','SWE1','SWE2')
-#df$value <-  mean(df$SWE1, df$SWE2) # assing; this snotel has 2 sensors... for some reason
 df$variableGroup <- 'snotelSWE'
 df$POSIXct <- as.POSIXct(as.Date(df$Time, format="%Y-%m-%d"))
 df$value <- df$SWE1
@@ -57,32 +57,25 @@ df$value <- df$SWE1
 # ~~~~~~~~~~~~~~ 2. Read Model SWE from LSM ~~~~~~~~~~~~~~~~~~~#  
 # --------------------------------------------------------------
 
-#
 lsmFiles <- list.files(path=dataPath, pattern='LDASOUT_DOMAIN', full.names=TRUE)
 flList <- list(lsm=lsmFiles)
-
 # variable list 
 lsmVars   <- list(SWE='SNEQV')
-
 # list of vars 
 varList <- list(lsm=lsmVars)
-
 # function to apply 
 basAvg = function(var) mean(var) 
 basMax = function(var) max(var) 
 
-#----  NOTE -------------------------------------------------------------------------------
-# indices to read; this step is very confusing and not well documented
-# the indices are x,y,time
-# each file has only one time step--so the last integer must be 1 for start and end 
-# the first two integers (start, end) correspond with the min and max indices of the grid 
-#------------------------------------------------------------------------------------------
+
 
 
 if(file.exists('modelSWE.csv')){
 	print('file exists')
 } else{
-	domainPath<-'/home/wrudisill/scratch/WRF_HYDRO-R2_WILLDEV/wy2010_SFPayette/DOMAIN/'
+	# If the model output file does not yet exist, then read the files (at the correct location)
+	# and create one 
+
 	# ~~ Find the correct index the corresponds w/ the gauge location lat/lon
 	# using a simple minimum distance formula
 	SampleFile <- GetNcdfFile(paste0(domainPath,'wrfinput_d01.nc'), quiet=TRUE)  #
@@ -93,6 +86,16 @@ if(file.exists('modelSWE.csv')){
 	buffer = 2
 	print(xloc)	
 	print(yloc)
+
+
+#----  NOTE -------------------------------------------------------------------------------
+# 'lsmInds": indices to read; this step is very confusing and not well documented
+# the indices are x,y,time
+# each file has only one time step--so the last integer must be 1 for start and end 
+# the first two integers (start, end) correspond with the min and max indices of the grid 
+# the 'stat' parameter applys a function to the selected grid cells (so, the cells between the min and max)
+#------------------------------------------------------------------------------------------
+
 	# now read in the data at thost locations 
 	lsmInds   <- list(SNEQV=list(start=c(xloc-buffer,yloc-buffer,1), end=c(xloc+buffer,yloc+buffer,1), stat='basAvg')) 
 	indList <- list(lsm=lsmInds)
@@ -119,6 +122,6 @@ print(merged)
 
 
 #------------------------------------------
-# ~~~~~~~~~~~ 3. Create Plots ~~~~~~~~~~~~~
+# ~~~~~~~~~~~ 5. Create Plots ~~~~~~~~~~~~~
 #------------------------------------------
 ggplot(data = merged) + geom_line(aes(POSIXct, value, color=variableGroup)) + facet_wrap(~site_no, ncol = 1) + ylim(0,80)
