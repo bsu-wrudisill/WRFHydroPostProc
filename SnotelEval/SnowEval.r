@@ -1,15 +1,21 @@
-#-----------------------------------------------------------------------------
-# PlotMultiNetCDF. 
-# Description: create timeseries graphs of radiation, soil moisture, and SWE 
-#              from WRFHydro output files. The script takes advantage of the 
-#              'GetMultiNcdf' function from rwrfhydro which makes reading multiple
-#              .nc files convenient 
+#--------------------------------------------------------------------------------------------------------------
+# SnowEval.r
+# Description: Compare modelled SWE versus station observations. Currently, the 
+#              function that automatically grabs SNOTEL data in rWRFhydro is broken.
+#              This script requires a CSV file present in the same working directory 
+#              that contains data for the appropriate snotel station. In addition to
+#              model output path (for LDASOUT files) the user must also supply the location
+#              of the corresponding wrfinput file for the domain --- this is simply so 
+#              the script can read lat/lon information and determine the appropriate 
+#              grid cell to pull from the dataset. For now, the lat/lon info for the 
+#              gauge must also be included (though this can be scripted to get pulled 
+#              from the station meta data). 
 # 
 # Requirements: 'ncdf4','doMC', and 'ggplot' libraries to be installed in addition to 
 # rwrfhydro 
 # 
-# Usage: Rscript WaterBalance.r <path_to_model_files>   (include trailing slash /) 
-#-----------------------------------------------------------------------------
+# Usage: Rscript SnowEval.r <path_to_LDAS_files>  <path_to_wrfinput_file> <lat> <lon> (include trailing slash /) 
+#----------------------------------------------------------------------------------------------------------------
 
 # Required Libraries 
 library("rwrfhydro")
@@ -18,22 +24,23 @@ library(ggplot2)
 library(scales)
 
 
-#--------------------------------------
+#------------------------------------------------------------------
 # ~~~~~~~ 0. User input arguments ~~~~~~
-#------------------------------------
+#------------------------------------------------------------------
 args = commandArgs(trailingOnly=TRUE)
 # test if there is at least one argument: if not, return an error
 if (length(args)==0){
-	print("usage: Rscript evalQcustom.R <dataPath>")
+	print("usage: Rscript SnowEval.R <dataPath> <domainPath> <lat> <lon>")
         print('No input arguments provided. using defaults')
 	dataPath <- '/home/wrudisill/scratch/WRF_HYDRO-R2_WILLDEV/wy2010_SFPayette/ModelOut/'
-	# dataPath <- '/scratch/wrudisill/WRFHydroPostProc/WRFHydro_TutorialData/'
+	domainPath <- '/home/wrudisill/scratch/WRF_HYDRO-R2_WILLDEV/wy2010_SFPayette/DOMAIN/'
 	requestedLat <- 44.330000
 	requestedLon <- -115.340000
     } else{
 	dataPath <- args[1]
-    	requestedLat <- args[2]
-	requestedLon <- args[3]
+    	domainPath <- args[2]
+    	requestedLat <- args[3]
+	requestedLon <- args[4]
 	}
 
 # --------------------------------------------------------------
