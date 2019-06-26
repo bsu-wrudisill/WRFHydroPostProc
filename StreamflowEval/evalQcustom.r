@@ -59,7 +59,7 @@ if(file.exists(modelOutputCSV)){
        
        	# format the date ... this is just so we can pick out a (single) file to read 
 	# gauge locations and lat/lon points 
-	dateSplit = unlist(strsplit(startDate, "-"))
+	dateSplit = unlist(strsplit(endDate, "-"))
 	yr=dateSplit[1]
 	mo=dateSplit[2]
 	day=dateSplit[3]
@@ -109,8 +109,8 @@ selected_cols<-c("dateTime", "site_no", "q_cms","run")
 merged <- rbind(obsDF[,selected_cols], simQ[,selected_cols])
 write.csv(merged, file='merged_discharge.csv')
 # plot the data
-ggplot(data = merged) + geom_line(aes(dateTime, q_cms, color=run)) + facet_wrap(~site_no, ncol = 1)
-#ggplot(data = merged) + geom_line(aes(dateTime, q_cms, color=run)) + facet_wrap(~site_no, ncol = 1) + ylim(0,1.5)
+#ggplot(data = merged) + geom_line(aes(dateTime, q_cms, color=run)) + facet_wrap(~site_no, ncol = 1)
+ggplot(data = merged) + geom_line(aes(dateTime, q_cms, color=run)) + facet_wrap(~site_no, ncol = 1) + ylim(0,.0025)
 
 
 
@@ -119,6 +119,7 @@ ggplot(data = merged) + geom_line(aes(dateTime, q_cms, color=run)) + facet_wrap(
 # Perform some statistics  
 #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!#
 
+# Aggregate data to daily 
 dailySimQ <- simQ %>%
   mutate(day = as.Date(dateTime, format="%Y-%m-%d")) %>%
   group_by(day) %>% # group by the day column
