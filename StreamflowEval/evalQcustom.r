@@ -4,7 +4,8 @@ library(data.table)
 library(ggplot2)
 library(foreach)
 library(rwrfhydro)
-
+library(dplyr)
+library(lubridate)
 
 #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!#
 #~~~~~~~~~~~~~~~ Part 0 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~# 
@@ -15,7 +16,7 @@ library(rwrfhydro)
 # arguments
 args = commandArgs(trailingOnly=TRUE)
 # test if there is at least one argument: if not, return an error
-if (length(args)==0) {
+if (length(args) ==0) {
 	print("usage: Rscript evalQcustom.R <dataPath> <startDate> <endDate> <USGS GageID>")
         print('No input arguments provided. using defaults')
 	dataPath <- '/scratch/wrudisill/WRF_HYDRO-R2_WILLDEV/wy2010_SFPayette/ModelOut/'    # location of model output files. this will only be read in if a CSV does not yet exist for the gauge point 
@@ -29,7 +30,7 @@ if (length(args)==0) {
 	endDate <- args[3]
 	gageID  <- args[4]
 	modelOutputCSV <- "WRFHydroDischarge.csv"        # this will either be read in (if it exists) or created. Perhaps create a better name for this file 
-	print(gageID)
+	
 }
 
 #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!#
@@ -49,11 +50,11 @@ requestedLon <- stationInfo$dec_long_va         #-115.618558 longitude of gauge 
 
 # Check if a csv od model outputs exists 
 if(file.exists(modelOutputCSV)){
-	print("file exists")
+	print("Model output CSV file exists")
 
 } else{
 	# if the csv does not exist, then read the files and write the csv
-	print("file does not exist. Reading from...")
+	print("Model output CSV does not exist. Reading files from...")
 	print(dataPath)
        
        	# format the date ... this is just so we can pick out a (single) file to read 
@@ -118,11 +119,6 @@ ggplot(data = merged) + geom_line(aes(dateTime, q_cms, color=run)) + facet_wrap(
 # Perform some statistics  
 #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!#
 
-#library(tibbletime)
-library(dplyr)
-library(lubridate)
-
-
 dailySimQ <- simQ %>%
   mutate(day = as.Date(dateTime, format="%Y-%m-%d")) %>%
   group_by(day) %>% # group by the day column
@@ -138,6 +134,6 @@ dailyObsQ <- obsDF %>%
 # merged daily --- there are some cases where the Obs are not reported for data quality issues
 mergedDailyAgg <- left_join(dailySimQ, dailyObsQ, by=c("day"))
 fit.lm = lm(Qm~Qo, data=mergedDailyAgg)
+print('-------- statistics -------')
+print('r^2 value is...')
 summary(fit.lm)$r.squared 
-
-
