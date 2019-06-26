@@ -52,9 +52,9 @@ varList <- list(forc=forcVars)
 # function to apply 
 basMean= function(var) mean(var) 
 
-## indices to read; this step is very confusing and not well documented
-## still trying to decipher what is going on here  
-forcInds   <- list(forcVars=list(start=c(1,1,1), end=c(2,2,1), stat='basMean'))
+## indices to read (this step is very confusing and not well documented)
+## apply mean to the chosen indices
+forcInds   <- list(forcVars=list(start=c(1,1,1), end=c(49,49,1), stat='basMean'))
 #
 indList <- list(forc=forcInds) 
 fileData <- GetMultiNcdf(file=flList,var=varList, ind=indList, parallel=FALSE)  # read netcdf files 

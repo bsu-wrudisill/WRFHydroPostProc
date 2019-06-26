@@ -8,7 +8,7 @@
 # Requirements: 'ncdf4','doMC', and 'ggplot' libraries to be installed in addition to 
 # rwrfhydro 
 # 
-# Usage: Rscript WaterBalance.r <path_to_model_files>   (include trailing slash /) 
+# Usage: Rscript WaterBalance.r <path_to_model_output_files>  (include trailing slash /) 
 #-----------------------------------------------------------------------------
 
 # Required Libraries 
@@ -26,7 +26,7 @@ args = commandArgs(trailingOnly=TRUE)
 if (length(args)==0){
 	print("usage: Rscript evalQcustom.R <dataPath>")
         print('No input arguments provided. using defaults')
-	dataPath <- '/scratch/leaf/WHv5_NWM_Tutorial/run_output/WH_SIM_channel_routing_00/'
+	dataPath <- '/home/wrudisill/scratch/WRFHydroPostProc/WRFHydro_TutorialData/'
     } else{
 	dataPath <- args[1]
     }
