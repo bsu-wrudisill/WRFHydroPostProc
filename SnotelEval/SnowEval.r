@@ -39,8 +39,8 @@ if (length(args)==0){
     } else{
 	dataPath <- args[1]
     	domainPath <- args[2]
-    	requestedLat <- args[3]
-	requestedLon <- args[4]
+    	requestedLat <- as.numeric(args[3])
+	requestedLon <- as.numeric(args[4])
 	}
 
 # --------------------------------------------------------------
